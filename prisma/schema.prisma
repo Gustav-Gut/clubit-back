@@ -25,6 +25,7 @@ model School {
   subscriptions Subscription[]
   payments      Payment[]
   sports        SchoolSport[]
+  classes       Class[]
 }
 
 model User {
@@ -49,6 +50,12 @@ model User {
   subscription     Subscription?
   tutorsRelation   UserTutor[]     @relation("StudentRelation")
   studentsRelation UserTutor[]     @relation("TutorRelation")
+
+  // Relaciones de Clases y Asistencia (Coach y Student)
+  coachedClasses    Class[]             @relation("CoachClass")
+  enrollments       ClassEnrollment[]
+  attendanceTaken   AttendanceSession[] @relation("SessionCoach")
+  attendanceRecords AttendanceRecord[]
 
   @@unique([rut, schoolId])
   @@unique([email, schoolId])
@@ -165,6 +172,7 @@ model Sport {
   defaultFields Json
 
   schools SchoolSport[]
+  classes Class[]
 }
 
 model SchoolSport {
@@ -211,4 +219,79 @@ model CoachProfile {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ----------------------------------------------------
+// MÓDULO CLASES (GROUPS) Y ASISTENCIA (ATTENDANCE)
+// ----------------------------------------------------
+
+model Class {
+  id   String @id @default(uuid())
+  name String // Ej: "Sub-12 Martes/Jueves"
+
+  schoolId String
+  sportId  String
+  coachId  String? // El profesor a cargo
+
+  schedule    String? // Ej: "Lunes 18:00 - 20:00"
+  maxStudents Int? // Límite de cupos dinámico por clase
+  active      Boolean @default(true)
+
+  school School @relation(fields: [schoolId], references: [id])
+  sport  Sport  @relation(fields: [sportId], references: [id])
+  coach  User?  @relation("CoachClass", fields: [coachId], references: [id])
+
+  enrollments ClassEnrollment[]
+  sessions    AttendanceSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ClassEnrollment {
+  id        String @id @default(uuid())
+  classId   String
+  studentId String
+
+  enrolledAt DateTime @default(now())
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId]) // Un alumno no puede inscribirse dos veces en la misma clase
+}
+
+model AttendanceSession {
+  id      String   @id @default(uuid())
+  classId String
+  coachId String // Quién tomó la lista
+  date    DateTime @default(now()) // La fecha de la clase dictada
+
+  class   Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
+  coach   User               @relation("SessionCoach", fields: [coachId], references: [id])
+  records AttendanceRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AttendanceRecord {
+  id        String @id @default(uuid())
+  sessionId String
+  studentId String
+
+  status AttendanceStatus @default(PRESENT)
+  notes  String? // Justificaciones ("Llegó enfermo", "Permiso del doctor")
+
+  session AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId]) // Un registro por alumno, por sesión
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
 }

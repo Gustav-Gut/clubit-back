@@ -12,6 +12,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { ApiKeyGuard } from './auth/guards/api-key.guard';
+import { ClassesModule } from './classes/classes.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { ApiKeyGuard } from './auth/guards/api-key.guard';
     SchoolsModule,
     UsersModule,
     AuthModule,
+    ClassesModule,
+    AttendanceModule,
   ],
   controllers: [AppController],
   providers: [
