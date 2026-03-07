@@ -24,26 +24,31 @@ model School {
   plans         Plan[]
   subscriptions Subscription[]
   payments      Payment[]
+  sports        SchoolSport[]
 }
 
 model User {
-  id               String        @id @default(uuid())
+  id               String          @id @default(uuid())
   rut              String
   firstName        String
   lastName         String
   email            String
   phone            String?
   password         String
-  active           Boolean       @default(true)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  active           Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   schoolId         String
-  role             Role          @default(ADMIN)
-  school           School        @relation(fields: [schoolId], references: [id])
+  role             Role            @default(ADMIN)
+  // Relaciones 1-a-1 a los perfiles
+  studentProfile   StudentProfile?
+  tutorProfile     TutorProfile?
+  coachProfile     CoachProfile?
+  school           School          @relation(fields: [schoolId], references: [id])
   payments         Payment[]
   subscription     Subscription?
-  tutorsRelation   UserTutor[]   @relation("StudentRelation")
-  studentsRelation UserTutor[]   @relation("TutorRelation")
+  tutorsRelation   UserTutor[]     @relation("StudentRelation")
+  studentsRelation UserTutor[]     @relation("TutorRelation")
 
   @@unique([rut, schoolId])
   @@unique([email, schoolId])
@@ -130,4 +135,80 @@ enum PaymentProvider {
   TOKU
   PAYPAL
   STRIPE
+}
+
+model StudentProfile {
+  id     String @id @default(uuid())
+  userId String @unique // Clave para la relación 1 a 1
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Campos Físicos / Biológicos
+  birthDate    DateTime?
+  weight       Float? // en kg
+  height       Float? // en cm
+  bloodType    String? // ej: 'O+', 'A-'
+  medicalNotes String? // Alergias, asma, lesiones previas
+
+  // Campos deportivos dinámicos (Custom Fields)
+  sportData Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sport {
+  id   String @id @default(uuid())
+  name String @unique // Ej: "Fútbol", "Básquetbol"
+
+  // La plantilla base de cómo se ve la ficha deportiva
+  // Ej: [{"key": "position", "label": "Posición", "type": "select", "options": ["Portero", "Defensa"]}]
+  defaultFields Json
+
+  schools SchoolSport[]
+}
+
+model SchoolSport {
+  id       String @id @default(uuid())
+  schoolId String
+  sportId  String
+
+  school School @relation(fields: [schoolId], references: [id])
+  sport  Sport  @relation(fields: [sportId], references: [id])
+
+  // Si la escuela quiere agregar campos extra o cambiar los tuyos, se guarda aquí.
+  // Si está vacío, tu Frontend usa los 'defaultFields' del Sport.
+  customFields Json?
+
+  @@unique([schoolId, sportId])
+}
+
+model TutorProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Información de contacto en caso de emergencia si se requiere algo extra
+  emergencyContact String? // Un número secundario
+  address          String?
+  occupation       String? // A veces útil para patrocinios o conocer a la comunidad
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CoachProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Resumen profesional
+  bio             String? // Pequeña descripción
+  specialty       String? // Ej: "Preparador Físico", "Técnico Táctico"
+  yearsExperience Int?
+
+  // Títulos o certificaciones
+  certifications String? // Ej: "Licencia PRO INAF"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
