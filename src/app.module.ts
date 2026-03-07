@@ -14,6 +14,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { ApiKeyGuard } from './auth/guards/api-key.guard';
 import { ClassesModule } from './classes/classes.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { FacilitiesModule } from './facilities/facilities.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     AuthModule,
     ClassesModule,
     AttendanceModule,
+    FacilitiesModule,
   ],
   controllers: [AppController],
   providers: [

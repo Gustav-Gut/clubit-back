@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Query } from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { EnrollStudentDto } from './dto/enroll-student.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // Assuming you have standard NestJS auth
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('classes')
 @UseGuards(JwtAuthGuard)
@@ -15,8 +16,8 @@ export class ClassesController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.classesService.findAll(req.user.schoolId);
+  findAll(@Request() req, @Query() paginationDto: PaginationDto) {
+    return this.classesService.findAll(req.user.schoolId, req.user, paginationDto);
   }
 
   @Get(':id')

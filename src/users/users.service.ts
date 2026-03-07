@@ -2,6 +2,7 @@ import { Injectable, ConflictException, InternalServerErrorException } from '@ne
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 
@@ -75,13 +76,36 @@ export class UsersService {
     });
   }
 
-  async findAll(schoolId: string) {
-    return this.prisma.userWithoutPassword.user.findMany({
-      where: {
-        active: true,
-        schoolId,
+  async findAll(schoolId: string, pagination?: PaginationDto) {
+    const { page = 1, limit = 10 } = pagination || {};
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.userWithoutPassword.user.findMany({
+        where: {
+          active: true,
+          schoolId,
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.userWithoutPassword.user.count({
+        where: {
+          active: true,
+          schoolId,
+        },
+      }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   async findByEmail(email: string, schoolId: string) {

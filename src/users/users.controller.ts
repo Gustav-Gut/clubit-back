@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, UseInterceptors, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, UseInterceptors, UnauthorizedException, Query } from '@nestjs/common';
 import { ClassSerializerInterceptor } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -25,10 +26,16 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @UseInterceptors(ClassSerializerInterceptor)
   @Get()
-  async findAll(@Headers('x-school-id') schoolId: string) {
+  async findAll(
+    @Headers('x-school-id') schoolId: string,
+    @Query() paginationDto: PaginationDto
+  ) {
     if (!schoolId) throw new UnauthorizedException('School ID is required header')
-    const users = await this.usersService.findAll(schoolId);
-    return users.map((user: User) => new User(user))
+    const result = await this.usersService.findAll(schoolId, paginationDto);
+    return {
+      ...result,
+      data: result.data.map((user: any) => new User(user))
+    };
   }
 
   @Roles(Role.ADMIN)

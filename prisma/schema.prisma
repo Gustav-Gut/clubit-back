@@ -26,6 +26,7 @@ model School {
   payments      Payment[]
   sports        SchoolSport[]
   classes       Class[]
+  facilities    Facility[]
 }
 
 model User {
@@ -47,7 +48,8 @@ model User {
   coachProfile     CoachProfile?
   school           School          @relation(fields: [schoolId], references: [id])
   payments         Payment[]
-  subscription     Subscription?
+  paidSubscriptions Subscription[] @relation("PayerSubscriptions")
+  studentSubscription Subscription? @relation("StudentSubscriptions")
   tutorsRelation   UserTutor[]     @relation("StudentRelation")
   studentsRelation UserTutor[]     @relation("TutorRelation")
 
@@ -94,11 +96,15 @@ model Subscription {
   externalId String?
   startDate  DateTime           @default(now())
   endDate    DateTime?
-  userId     String             @unique
+  
+  payerId    String
+  studentId  String             @unique // El estudiante (beneficiario) solo puede tener 1 suscripción activa
+
   schoolId   String
   status     SubscriptionStatus @default(PENDING)
   school     School             @relation(fields: [schoolId], references: [id])
-  user       User               @relation(fields: [userId], references: [id])
+  payer      User               @relation("PayerSubscriptions", fields: [payerId], references: [id])
+  student    User               @relation("StudentSubscriptions", fields: [studentId], references: [id])
   plan       Plan               @relation(fields: [planId], references: [id])
 }
 
@@ -240,6 +246,9 @@ model Class {
   school School @relation(fields: [schoolId], references: [id])
   sport  Sport  @relation(fields: [sportId], references: [id])
   coach  User?  @relation("CoachClass", fields: [coachId], references: [id])
+  
+  facilityId String?
+  facility   Facility? @relation(fields: [facilityId], references: [id])
 
   enrollments ClassEnrollment[]
   sessions    AttendanceSession[]
@@ -294,4 +303,15 @@ enum AttendanceStatus {
   ABSENT
   LATE
   EXCUSED
+}
+
+model Facility {
+  id        String   @id @default(uuid())
+  name      String   // Ej: "Cancha de Pasto 1", "Gimnasio Techado"
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  classes   Class[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

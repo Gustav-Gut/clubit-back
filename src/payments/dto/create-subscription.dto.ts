@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsPositive, IsString, Min } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Min } from 'class-validator';
 
 export class CreateSubscriptionDto {
     @IsNumber()
@@ -17,4 +17,8 @@ export class CreateSubscriptionDto {
     @IsNumber()
     @IsPositive()
     frequency: number; // Meses
+
+    @IsString()
+    @IsOptional()
+    studentId?: string;
 }

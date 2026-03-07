@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException }
 import { CreateClassDto } from './dto/create-class.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EnrollStudentDto } from './dto/enroll-student.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class ClassesService {
@@ -16,15 +18,41 @@ export class ClassesService {
     });
   }
 
-  async findAll(schoolId: string) {
-    return this.prisma.class.findMany({
-      where: { schoolId },
-      include: {
-        sport: true,
-        coach: { select: { id: true, firstName: true, lastName: true } },
-        _count: { select: { enrollments: true } }
-      }
-    });
+  async findAll(schoolId: string, user: { id: string, role: string }, pagination?: PaginationDto) {
+    const { page = 1, limit = 10 } = pagination || {};
+    const skip = (page - 1) * limit;
+
+    // Filtro de seguridad: Si es Coach, solo ve sus clases
+    const whereClause: any = { schoolId, active: true };
+    if (user.role === Role.COACH) {
+      whereClause.coachId = user.id;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.class.findMany({
+        where: whereClause,
+        include: {
+          sport: true,
+          coach: { select: { id: true, firstName: true, lastName: true } },
+          _count: { select: { enrollments: true } }
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.class.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string, schoolId: string) {

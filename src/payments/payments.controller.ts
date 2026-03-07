@@ -33,6 +33,7 @@ export class PaymentsController {
             createSubscriptionDto.reason,
             createSubscriptionDto.frequency,
             schoolId,
+            createSubscriptionDto.studentId,
         );
     }
 

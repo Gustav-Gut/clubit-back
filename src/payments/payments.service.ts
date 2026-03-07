@@ -48,18 +48,24 @@ export class PaymentsService {
         return { link, paymentId: newPayment.id };
     }
 
-    async createSubscription(price: number, email: string, reason: string, frequency: number, schoolId: string) {
-        const user = await this.validateUser(email, schoolId);
+    async createSubscription(price: number, email: string, reason: string, frequency: number, schoolId: string, studentId?: string) {
+        const payer = await this.validateUser(email, schoolId);
+
+        // Si no se provee studentId, el pagador es el estudiante (adulto)
+        const targetStudentId = studentId || payer.id;
 
         const subscription = await this.prismaService.subscription.upsert({
-            where: { userId: user.id },
+            where: { studentId: targetStudentId },
             update: {
                 planId: reason,
                 status: 'PENDING',
                 startDate: new Date(),
+                payerId: payer.id,
+                schoolId: schoolId
             },
             create: {
-                userId: user.id,
+                studentId: targetStudentId,
+                payerId: payer.id,
                 planId: reason,
                 provider: this.paymentGateway.provider,
                 status: 'PENDING',
