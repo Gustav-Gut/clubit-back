@@ -7,7 +7,7 @@ export class FacilitiesService {
     constructor(private prisma: PrismaService) { }
 
     async create(createFacilityDto: CreateFacilityDto, schoolId: string) {
-        return this.prisma.facility.create({
+        return this.prisma['facility'].create({
             data: {
                 ...createFacilityDto,
                 schoolId,
@@ -16,7 +16,7 @@ export class FacilitiesService {
     }
 
     async findAll(schoolId: string) {
-        return this.prisma.facility.findMany({
+        return this.prisma['facility'].findMany({
             where: { schoolId },
             include: {
                 _count: { select: { classes: true } },
@@ -25,7 +25,7 @@ export class FacilitiesService {
     }
 
     async findOne(id: string, schoolId: string) {
-        const facility = await this.prisma.facility.findFirst({
+        const facility = await this.prisma['facility'].findFirst({
             where: { id, schoolId },
             include: {
                 classes: {
@@ -42,7 +42,7 @@ export class FacilitiesService {
     }
 
     async update(id: string, updateFacilityDto: any, schoolId: string) {
-        return this.prisma.facility.update({
+        return this.prisma['facility'].update({
             where: { id, schoolId },
             data: updateFacilityDto,
         });
@@ -50,14 +50,14 @@ export class FacilitiesService {
 
     async remove(id: string, schoolId: string) {
         // Podríamos implementar borrado lógico si fuera necesario
-        return this.prisma.facility.delete({
+        return this.prisma['facility'].delete({
             where: { id, schoolId },
         });
     }
 
     async getCalendar(schoolId: string) {
         // Cruza las clases con las canchas para armar un calendario
-        const classes = await this.prisma.class.findMany({
+        const classes = await this.prisma['class'].findMany({
             where: { schoolId, active: true },
             include: {
                 facility: true,
@@ -71,7 +71,9 @@ export class FacilitiesService {
             title: `${c.name} (${c.sport.name})`,
             coach: c.coach ? `${c.coach.firstName} ${c.coach.lastName}` : 'Sin profesor',
             facility: c.facility?.name || 'Sin cancha asignada',
-            schedule: c.schedule,
+            dayOfWeek: c.dayOfWeek,
+            startTime: c.startTime,
+            endTime: c.endTime,
             facilityId: c.facilityId,
         }));
     }

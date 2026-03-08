@@ -25,9 +25,9 @@ async function bootstrap() {
         if (!student) throw new Error('Falta el estudiante de prueba');
 
         // Crear un deporte temporal si no existe
-        let sport = await prismaService.sport.findFirst({ where: { name: 'Basketball' } });
+        let sport = await prismaService['sport'].findFirst({ where: { name: 'Basketball' } });
         if (!sport) {
-            sport = await prismaService.sport.create({
+            sport = await prismaService['sport'].create({
                 data: { name: 'Basketball', defaultFields: {} }
             });
         }
@@ -37,7 +37,9 @@ async function bootstrap() {
             name: 'Sub-15 Avanzado Basket',
             sportId: sport.id,
             maxStudents: 15,
-            schedule: 'Lunes y Miércoles 18:00'
+            dayOfWeek: 1, // Lunes
+            startTime: new Date('2024-01-01T18:00:00Z').toISOString(),
+            endTime: new Date('2024-01-01T20:00:00Z').toISOString(),
         }, school.id);
         console.log(`Clase creada: ${newClass.name} (Max Cupos: ${newClass.maxStudents})`);
 

@@ -31,7 +31,7 @@ export class UsersController {
     @Query() paginationDto: PaginationDto
   ) {
     if (!schoolId) throw new UnauthorizedException('School ID is required header')
-    const result = await this.usersService.findAll(schoolId, paginationDto);
+    const result = await this.usersService.findAll(schoolId, paginationDto, paginationDto.search);
     return {
       ...result,
       data: result.data.map((user: any) => new User(user))

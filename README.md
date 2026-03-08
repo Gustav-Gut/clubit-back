@@ -87,6 +87,55 @@ $ mau deploy
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
+## 🏗️ Arquitectura de Datos
+
+El sistema sigue una arquitectura **Multi-tenant** donde casi todas las entidades están vinculadas a una `School`. A continuación se detallan las relaciones principales:
+
+### 📊 Diagrama de Entidad-Relación
+
+```mermaid
+erDiagram
+    School ||--o{ User : "tiene"
+    School ||--o{ Plan : "ofrece"
+    School ||--o{ Facility : "posee"
+    School ||--o{ Class : "organiza"
+    
+    User ||--o{ StudentProfile : "perfil de"
+    User ||--o{ TutorProfile : "perfil de"
+    User ||--o{ CoachProfile : "perfil de"
+    
+    User ||--o{ UserTutor : "tutor/estudiante"
+    UserTutor }o--|| User : "vincula"
+    
+    Subscription ||--|| User : "estudiante (beneficiario)"
+    Subscription ||--|| User : "pagador (tutor)"
+    Subscription ||--|| Plan : "basado en"
+    
+    Class }o--|| Sport : "de"
+    Class }o--|| Facility : "en"
+    Class }o--|| User : "coach"
+    
+    ClassEnrollment }o--|| Class : "clase"
+    ClassEnrollment }o--|| User : "alumno"
+    
+    AttendanceSession ||--o{ AttendanceRecord : "contiene"
+    AttendanceSession ||--|| Class : "de la clase"
+```
+
+### 🔑 Entidades Clave
+
+1.  **School**: El eje central. Separa los datos de cada cliente/institución.
+2.  **User & Profiles**: Un usuario tiene un `Role`. Dependiendo del rol, puede tener perfiles específicos (`StudentProfile`, `TutorProfile`, `CoachProfile`) con datos adicionales.
+3.  **Relación Tutor-Estudiante**: Manejada mediante `UserTutor` para permitir que un tutor gestione múltiples alumnos y viceversa.
+4.  **Suscripciones y Pagos**:
+    *   `Subscription` vincula a un beneficiario con un plan.
+    *   `PayerId` permite que un tercero (tutor) pague la cuenta.
+5.  **Módulo Deportivo**:
+    *   `Sport`: Define campos personalizados por defecto.
+    *   `SchoolSport`: Permite a cada escuela sobrescribir la ficha deportiva.
+    *   `Class`: Grupos de entrenamiento con horarios y cupos.
+    *   `Attendance`: Control de asistencia por sesión.
+
 ## Resources
 
 Check out a few resources that may come in handy when working with NestJS:

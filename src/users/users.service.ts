@@ -76,24 +76,31 @@ export class UsersService {
     });
   }
 
-  async findAll(schoolId: string, pagination?: PaginationDto) {
+  async findAll(schoolId: string, pagination?: PaginationDto, search?: string) {
     const { page = 1, limit = 10 } = pagination || {};
     const skip = (page - 1) * limit;
 
+    const whereClause: any = {
+      schoolId,
+      active: true,
+      ...(search && {
+        OR: [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { rut: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
     const [data, total] = await Promise.all([
       this.prisma.userWithoutPassword.user.findMany({
-        where: {
-          active: true,
-          schoolId,
-        },
+        where: whereClause,
         skip,
         take: limit,
       }),
       this.prisma.userWithoutPassword.user.count({
-        where: {
-          active: true,
-          schoolId,
-        },
+        where: whereClause,
       }),
     ]);
 

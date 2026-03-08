@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { PrismaClientExceptionFilter } from './prisma/prisma-exception.filter';
+import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -13,7 +15,11 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
     }));
-    app.useGlobalFilters(new PrismaClientExceptionFilter());
+    app.useGlobalFilters(
+      new GlobalExceptionFilter(),
+      new PrismaClientExceptionFilter(),
+    );
+    app.useGlobalInterceptors(new LoggingInterceptor());
 
     // Configuración de Swagger
     const config = new DocumentBuilder()

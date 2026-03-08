@@ -31,11 +31,11 @@ export class PaymentsService {
         const newPayment = await this.prismaService.payment.create({
             data: {
                 amount: amount,
-                provider: this.paymentGateway.provider,
+                provider: this.paymentGateway.provider as any,
                 status: 'PENDING',
-                userId: user.id,
-                schoolId: schoolId
-            },
+                user: { connect: { id: user.id } },
+                school: { connect: { id: schoolId } }
+            } as any,
         });
 
         const link = await this.paymentGateway.createPaymentLink(
@@ -57,20 +57,20 @@ export class PaymentsService {
         const subscription = await this.prismaService.subscription.upsert({
             where: { studentId: targetStudentId },
             update: {
-                planId: reason,
+                plan: { connect: { id: reason } },
                 status: 'PENDING',
                 startDate: new Date(),
-                payerId: payer.id,
-                schoolId: schoolId
-            },
+                payer: { connect: { id: payer.id } },
+                school: { connect: { id: schoolId } }
+            } as any,
             create: {
-                studentId: targetStudentId,
-                payerId: payer.id,
-                planId: reason,
-                provider: this.paymentGateway.provider,
+                student: { connect: { id: targetStudentId } },
+                payer: { connect: { id: payer.id } },
+                plan: { connect: { id: reason } },
+                provider: this.paymentGateway.provider as any,
                 status: 'PENDING',
-                schoolId: schoolId
-            },
+                school: { connect: { id: schoolId } }
+            } as any,
         });
 
         const link = await this.paymentGateway.createSubscription(

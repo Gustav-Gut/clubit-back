@@ -17,7 +17,7 @@ export class ClassesService {
       await this.checkScheduleConflict(facilityId, dayOfWeek, startTime, endTime);
     }
 
-    return this.prisma.class.create({
+    return this.prisma['class'].create({
       data: {
         ...createClassDto,
         schoolId,
@@ -25,12 +25,21 @@ export class ClassesService {
     });
   }
 
-  async findAll(schoolId: string, user: { id: string, role: string }, pagination?: PaginationDto) {
+  async findAll(schoolId: string, user: { id: string, role: string }, pagination?: PaginationDto, search?: string) {
     const { page = 1, limit = 10 } = pagination || {};
     const skip = (page - 1) * limit;
 
     // Filtro de seguridad: Si es Coach, solo ve sus clases
-    const whereClause: any = { schoolId, active: true };
+    const whereClause: any = {
+      schoolId,
+      active: true,
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { sport: { name: { contains: search, mode: 'insensitive' } } },
+        ]
+      })
+    };
     if (user.role === Role.COACH) {
       whereClause.coachId = user.id;
     }
@@ -46,7 +55,7 @@ export class ClassesService {
         skip,
         take: limit,
       }),
-      this.prisma.class.count({
+      this.prisma['class'].count({
         where: whereClause,
       }),
     ]);
@@ -116,7 +125,7 @@ export class ClassesService {
     const startHour = start.getUTCHours() * 60 + start.getUTCMinutes();
     const endHour = end.getUTCHours() * 60 + end.getUTCMinutes();
 
-    const conflicts = await this.prisma.class.findMany({
+    const conflicts = await this.prisma['class'].findMany({
       where: {
         facilityId,
         dayOfWeek,
@@ -139,7 +148,7 @@ export class ClassesService {
   }
 
   async remove(id: string, schoolId: string) {
-    return this.prisma.class.update({
+    return this.prisma['class'].update({
       where: { id, schoolId },
       data: { active: false },
     });

@@ -17,7 +17,7 @@ export class ClassesController {
 
   @Get()
   findAll(@Request() req, @Query() paginationDto: PaginationDto) {
-    return this.classesService.findAll(req.user.schoolId, req.user, paginationDto);
+    return this.classesService.findAll(req.user.schoolId, req.user, paginationDto, paginationDto.search);
   }
 
   @Get(':id')

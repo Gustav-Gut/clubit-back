@@ -57,9 +57,9 @@ describe('Enterprise Flow (Integration Test)', () => {
         console.log(`✅ Cancha creada: ${cancha.name}`);
 
         // 3. Crear Deporte y Clase
-        let sport = await prismaService.sport.findFirst({ where: { name: 'Fútbol' } });
+        let sport = await prismaService['sport'].findFirst({ where: { name: 'Fútbol' } });
         if (!sport) {
-            sport = await prismaService.sport.create({
+            sport = await prismaService['sport'].create({
                 data: { name: 'Fútbol', defaultFields: {} }
             });
         }
@@ -186,7 +186,7 @@ describe('Enterprise Flow (Integration Test)', () => {
         const records = await prismaService.subscription.findMany({
             where: { schoolId: school!.id, OR: [{ payerId: tutor.id }, { payerId: adultStudent.id }] },
             include: { payer: true, student: true }
-        });
+        }) as any[];
 
         console.log('\n--- VERIFICACIÓN EN BASE DE DATOS ---');
         records.forEach(r => {
