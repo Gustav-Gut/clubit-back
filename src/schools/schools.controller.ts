@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { CurrentSchoolId } from '../auth/decorators/current-school-id.decorator';
 import { SchoolsService } from './schools.service';
 import { CreateSchoolDto } from './dto/create-school.dto';
 import { UpdateSchoolDto } from './dto/update-school.dto';
@@ -24,14 +25,14 @@ export class SchoolsController {
 
   @Get()
   findOne(
-    @Headers('x-school-id') schoolId: string) {
+    @CurrentSchoolId() schoolId: string) {
     return this.schoolsService.findOne(schoolId);
   }
 
   @Roles(Role.ADMIN)
   @Patch()
   update(
-    @Headers('x-school-id') schoolId: string,
+    @CurrentSchoolId() schoolId: string,
     @Body() updateSchoolDto: UpdateSchoolDto) {
     return this.schoolsService.update(schoolId, updateSchoolDto);
   }
@@ -39,7 +40,7 @@ export class SchoolsController {
   @Roles(Role.SUPERADMIN)
   @Delete()
   remove(
-    @Headers('x-school-id') schoolId: string) {
+    @CurrentSchoolId() schoolId: string) {
     return this.schoolsService.remove(schoolId);
   }
 }

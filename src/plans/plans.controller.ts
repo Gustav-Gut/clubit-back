@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UnauthorizedException } from '@nestjs/common';
+import { CurrentSchoolId } from '../auth/decorators/current-school-id.decorator';
 import { PlansService } from './plans.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
@@ -13,16 +14,14 @@ export class PlansController {
   @Post()
   create(
     @Body() createPlanDto: CreatePlanDto,
-    @Headers('x-school-id') schoolId: string
+    @CurrentSchoolId() schoolId: string
   ) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required');
     return this.plansService.create(schoolId, createPlanDto);
   }
 
   @Roles(Role.ADMIN)
   findAll(
-    @Headers('x-school-id') schoolId: string) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required');
+    @CurrentSchoolId() schoolId: string) {
     return this.plansService.findAll(schoolId);
   }
 
@@ -30,9 +29,8 @@ export class PlansController {
   @Get(':id')
   findOne(
     @Param('id') id: string,
-    @Headers('x-school-id') schoolId: string
+    @CurrentSchoolId() schoolId: string
   ) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required');
     return this.plansService.findOne(id, schoolId);
   }
 
@@ -41,9 +39,8 @@ export class PlansController {
   update(
     @Param('id') id: string,
     @Body() updatePlanDto: UpdatePlanDto,
-    @Headers('x-school-id') schoolId: string
+    @CurrentSchoolId() schoolId: string
   ) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required');
     return this.plansService.update(id, schoolId, updatePlanDto);
   }
 
@@ -51,9 +48,8 @@ export class PlansController {
   @Delete(':id')
   remove(
     @Param('id') id: string,
-    @Headers('x-school-id') schoolId: string
+    @CurrentSchoolId() schoolId: string
   ) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required');
     return this.plansService.remove(id, schoolId);
   }
 }

@@ -1,4 +1,5 @@
-import { Body, Controller, Post, Get, Query, Headers, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Post, Get, Query, UnauthorizedException } from '@nestjs/common';
+import { CurrentSchoolId } from '../auth/decorators/current-school-id.decorator';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
@@ -10,9 +11,8 @@ export class PaymentsController {
     @Post('create-link')
     createLink(
         @Body() createPaymentDto: CreatePaymentDto,
-        @Headers('x-school-id') schoolId: string
+        @CurrentSchoolId() schoolId: string
     ) {
-        if (!schoolId) throw new UnauthorizedException('School ID is required header');
         return this.paymentsService.createPayment(
             createPaymentDto.amount,
             createPaymentDto.email,
@@ -24,9 +24,8 @@ export class PaymentsController {
     @Post('create-subscription')
     createSubscription(
         @Body() createSubscriptionDto: CreateSubscriptionDto,
-        @Headers('x-school-id') schoolId: string
+        @CurrentSchoolId() schoolId: string
     ) {
-        if (!schoolId) throw new UnauthorizedException('School ID is required header');
         return this.paymentsService.createSubscription(
             createSubscriptionDto.price,
             createSubscriptionDto.email,
@@ -40,9 +39,8 @@ export class PaymentsController {
     @Get('subscriptions')
     getSubscriptions(
         @Query('email') email: string,
-        @Headers('x-school-id') schoolId: string
+        @CurrentSchoolId() schoolId: string
     ) {
-        if (!schoolId) throw new UnauthorizedException('School ID is required header');
         return this.paymentsService.getSubscriptions(email, schoolId);
     }
 

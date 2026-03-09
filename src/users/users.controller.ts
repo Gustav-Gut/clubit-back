@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, UseInterceptors, UnauthorizedException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UnauthorizedException, Query } from '@nestjs/common';
+import { CurrentSchoolId } from '../auth/decorators/current-school-id.decorator';
 import { ClassSerializerInterceptor } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -17,8 +18,7 @@ export class UsersController {
   @Post()
   async create(
     @Body() createUserDto: CreateUserDto,
-    @Headers('x-school-id') schoolId: string) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required header')
+    @CurrentSchoolId() schoolId: string) {
     const user = await this.usersService.create(createUserDto, schoolId);
     return new User(user)
   }
@@ -27,10 +27,9 @@ export class UsersController {
   @UseInterceptors(ClassSerializerInterceptor)
   @Get()
   async findAll(
-    @Headers('x-school-id') schoolId: string,
+    @CurrentSchoolId() schoolId: string,
     @Query() paginationDto: PaginationDto
   ) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required header')
     const result = await this.usersService.findAll(schoolId, paginationDto, paginationDto.search);
     return {
       ...result,
@@ -43,8 +42,7 @@ export class UsersController {
   @Get(':id')
   async findOne(
     @Param('id') id: string,
-    @Headers('x-school-id') schoolId: string) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required header')
+    @CurrentSchoolId() schoolId: string) {
     const user = await this.usersService.findOne(id, schoolId);
     return new User(user)
   }
@@ -55,8 +53,7 @@ export class UsersController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Headers('x-school-id') schoolId: string) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required header')
+    @CurrentSchoolId() schoolId: string) {
     const user = await this.usersService.update(id, updateUserDto, schoolId);
     return new User(user)
   }
@@ -66,8 +63,7 @@ export class UsersController {
   @Delete(':id')
   async remove(
     @Param('id') id: string,
-    @Headers('x-school-id') schoolId: string) {
-    if (!schoolId) throw new UnauthorizedException('School ID is required header')
+    @CurrentSchoolId() schoolId: string) {
     const user = await this.usersService.remove(id, schoolId);
     return new User(user)
   }
