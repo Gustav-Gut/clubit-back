@@ -20,6 +20,7 @@ export class PlansController {
   }
 
   @Roles(Role.ADMIN)
+  @Get()
   findAll(
     @CurrentSchoolId() schoolId: string) {
     return this.plansService.findAll(schoolId);
