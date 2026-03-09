@@ -19,7 +19,7 @@ export class AttendanceRecordDto {
 export class CreateAttendanceSessionDto {
     @IsString()
     @IsNotEmpty()
-    classId: string;
+    lessonId: string;
 
     @IsDateString()
     @IsNotEmpty()

@@ -33,7 +33,7 @@ export class PaymentsService {
                 amount: amount,
                 provider: this.paymentGateway.provider as any,
                 status: 'PENDING',
-                user: { connect: { id: user.id } },
+                payer: { connect: { id: user.id } },
                 school: { connect: { id: schoolId } }
             } as any,
         });

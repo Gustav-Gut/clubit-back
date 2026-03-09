@@ -91,45 +91,29 @@ With Mau, you can deploy your application in just a few clicks, allowing you to 
 
 El sistema sigue una arquitectura **Multi-tenant** donde casi todas las entidades están vinculadas a una `School`. A continuación se detallan las relaciones principales:
 
-### 📊 Diagrama de Entidad-Relación
+### 🗺️ Diagrama de Relaciones
 
 ```mermaid
 erDiagram
     School ||--o{ User : "tiene"
     School ||--o{ Plan : "ofrece"
+    School ||--o{ Lesson : "gestiona"
     School ||--o{ Facility : "posee"
-    School ||--o{ "Class" : "organiza"
     
-    User ||--o{ StudentProfile : "perfil de"
-    User ||--o{ TutorProfile : "perfil de"
-    User ||--o{ CoachProfile : "perfil de"
+    User ||--o{ Payment : "realiza"
+    User ||--o{ Subscription : "paga (tutor)"
+    User ||--o{ Subscription : "beneficiario (alumno)"
     
-    User ||--o{ UserTutor : "tutor/estudiante"
-    UserTutor }o--|| User : "vincula"
+    User ||--o{ Lesson : "entrena (coach)"
+    User ||--o{ LessonEnrollment : "está inscrito"
+    Lesson ||--o{ LessonEnrollment : "contiene"
     
-    Subscription ||--|| User : "estudiante (beneficiario)"
-    Subscription ||--|| User : "pagador (tutor)"
-    Subscription ||--|| Plan : "basado en"
-    
-    "Class" }o--|| Sport : "de"
-    "Class" }o--|| Facility : "en"
-    "Class" }o--|| User : "coach"
-    
-    ClassEnrollment }o--|| "Class" : "clase"
-    ClassEnrollment }o--|| User : "alumno"
-    
+    Lesson ||--o{ AttendanceSession : "tiene"
     AttendanceSession ||--o{ AttendanceRecord : "contiene"
-    AttendanceSession ||--|| "Class" : "de la clase"
-```
-
-### 🔑 Entidades Clave
-
-1.  **School**: El eje central. Separa los datos de cada cliente/institución.
-2.  **User & Profiles**: Un usuario tiene un `Role`. Dependiendo del rol, puede tener perfiles específicos (`StudentProfile`, `TutorProfile`, `CoachProfile`) con datos adicionales.
 3.  **Relación Tutor-Estudiante**: Manejada mediante `UserTutor` para permitir que un tutor gestione múltiples alumnos y viceversa.
 4.  **Suscripciones y Pagos**:
-    *   `Subscription` vincula a un beneficiario con un plan.
-    *   `PayerId` permite que un tercero (tutor) pague la cuenta.
+    *   `Subscription` vincula a un beneficiario con un plan, gestionado por un `payerId`.
+    *   `Payment` registra las transacciones financieras, ahora usando `payerId` para identificar al pagador, manteniendo consistencia con las suscripciones.
 5.  **Módulo Deportivo**:
     *   `Sport`: Define campos personalizados por defecto.
     *   `SchoolSport`: Permite a cada escuela sobrescribir la ficha deportiva.

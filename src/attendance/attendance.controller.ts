@@ -13,17 +13,17 @@ export class AttendanceController {
     return this.attendanceService.submitAttendance(dto, req.user.id, req.user.schoolId);
   }
 
-  @Get('class/:classId')
-  getClassHistory(@Param('classId') classId: string, @Request() req) {
-    return this.attendanceService.getClassAttendanceHistory(classId, req.user.schoolId);
+  @Get('class/:lessonId')
+  getClassHistory(@Param('lessonId') lessonId: string, @Request() req) {
+    return this.attendanceService.getClassAttendanceHistory(lessonId, req.user.schoolId);
   }
 
-  @Get('student/:studentId/class/:classId')
+  @Get('student/:studentId/class/:lessonId')
   getStudentHistory(
     @Param('studentId') studentId: string,
-    @Param('classId') classId: string,
+    @Param('lessonId') lessonId: string,
     @Request() req
   ) {
-    return this.attendanceService.getStudentAttendance(studentId, classId, req.user.schoolId);
+    return this.attendanceService.getStudentAttendance(studentId, lessonId, req.user.schoolId);
   }
 }

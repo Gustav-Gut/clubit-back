@@ -1,8 +1,8 @@
 import { IsString, IsNotEmpty, IsOptional, IsInt, Min, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateClassDto {
-    @ApiProperty({ example: 'Selectivo Sub-17', description: 'Nombre de la clase' })
+export class CreateLessonDto {
+    @ApiProperty({ example: 'Selectivo Sub-17', description: 'Nombre de la lección' })
     @IsString()
     @IsNotEmpty()
     name: string;
@@ -44,7 +44,7 @@ export class CreateClassDto {
     @IsOptional()
     maxStudents?: number;
 
-    @ApiProperty({ example: true, description: 'Estado de la clase', required: false })
+    @ApiProperty({ example: true, description: 'Estado de la lección', required: false })
     @IsBoolean()
     @IsOptional()
     active?: boolean;

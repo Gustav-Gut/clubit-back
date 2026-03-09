@@ -25,37 +25,37 @@ model School {
   subscriptions Subscription[]
   payments      Payment[]
   sports        SchoolSport[]
-  classes       Class[]
+  lessons       Lesson[]
   facilities    Facility[]
 }
 
 model User {
-  id               String          @id @default(uuid())
-  rut              String
-  firstName        String
-  lastName         String
-  email            String
-  phone            String?
-  password         String
-  active           Boolean         @default(true)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  schoolId         String
-  role             Role            @default(ADMIN)
+  id                  String          @id @default(uuid())
+  rut                 String
+  firstName           String
+  lastName            String
+  email               String
+  phone               String?
+  password            String
+  active              Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  schoolId            String
+  role                Role            @default(ADMIN)
   // Relaciones 1-a-1 a los perfiles
-  studentProfile   StudentProfile?
-  tutorProfile     TutorProfile?
-  coachProfile     CoachProfile?
-  school           School          @relation(fields: [schoolId], references: [id])
-  payments         Payment[]
-  paidSubscriptions Subscription[] @relation("PayerSubscriptions")
-  studentSubscription Subscription? @relation("StudentSubscriptions")
-  tutorsRelation   UserTutor[]     @relation("StudentRelation")
-  studentsRelation UserTutor[]     @relation("TutorRelation")
+  studentProfile      StudentProfile?
+  tutorProfile        TutorProfile?
+  coachProfile        CoachProfile?
+  school              School          @relation(fields: [schoolId], references: [id])
+  payments            Payment[]
+  paidSubscriptions   Subscription[]  @relation("PayerSubscriptions")
+  studentSubscription Subscription?   @relation("StudentSubscriptions")
+  tutorsRelation      UserTutor[]     @relation("StudentRelation")
+  studentsRelation    UserTutor[]     @relation("TutorRelation")
 
   // Relaciones de Clases y Asistencia (Coach y Student)
-  coachedClasses    Class[]             @relation("CoachClass")
-  enrollments       ClassEnrollment[]
+  coachedLessons    Lesson[]            @relation("CoachLesson")
+  enrollments       LessonEnrollment[]
   attendanceTaken   AttendanceSession[] @relation("SessionCoach")
   attendanceRecords AttendanceRecord[]
 
@@ -90,22 +90,22 @@ model Plan {
 }
 
 model Subscription {
-  id         String             @id @default(uuid())
+  id         String          @id @default(uuid())
   planId     String
   provider   PaymentProvider
   externalId String?
-  startDate  DateTime           @default(now())
+  startDate  DateTime        @default(now())
   endDate    DateTime?
-  
-  payerId    String
-  studentId  String             @unique // El estudiante (beneficiario) solo puede tener 1 suscripción activa
 
-  schoolId   String
-  status     SubscriptionStatus @default(PENDING)
-  school     School             @relation(fields: [schoolId], references: [id])
-  payer      User               @relation("PayerSubscriptions", fields: [payerId], references: [id])
-  student    User               @relation("StudentSubscriptions", fields: [studentId], references: [id])
-  plan       Plan               @relation(fields: [planId], references: [id])
+  payerId   String
+  studentId String @unique // El estudiante (beneficiario) solo puede tener 1 suscripción activa
+
+  schoolId String
+  status   SubscriptionStatus @default(PENDING)
+  school   School             @relation(fields: [schoolId], references: [id])
+  payer    User               @relation("PayerSubscriptions", fields: [payerId], references: [id])
+  student  User               @relation("StudentSubscriptions", fields: [studentId], references: [id])
+  plan     Plan               @relation(fields: [planId], references: [id])
 }
 
 model Payment {
@@ -116,10 +116,10 @@ model Payment {
   externalId String?
   status     PaymentStatus   @default(PENDING)
   createdAt  DateTime        @default(now())
-  userId     String
+  payerId    String
   schoolId   String
   school     School          @relation(fields: [schoolId], references: [id])
-  user       User            @relation(fields: [userId], references: [id])
+  payer      User            @relation(fields: [payerId], references: [id])
 }
 
 enum Role {
@@ -178,7 +178,7 @@ model Sport {
   defaultFields Json
 
   schools SchoolSport[]
-  classes Class[]
+  lessons Lesson[]
 }
 
 model SchoolSport {
@@ -228,10 +228,10 @@ model CoachProfile {
 }
 
 // ----------------------------------------------------
-// MÓDULO CLASES (GROUPS) Y ASISTENCIA (ATTENDANCE)
+// MÓDULO LECCIONES (GROUPS) Y ASISTENCIA (ATTENDANCE)
 // ----------------------------------------------------
 
-model Class {
+model Lesson {
   id   String @id @default(uuid())
   name String // Ej: "Sub-12 Martes/Jueves"
 
@@ -240,46 +240,46 @@ model Class {
   coachId  String? // El profesor a cargo
 
   schedule    String? // Ej: "Lunes 18:00 - 20:00" (Legacy)
-  dayOfWeek   Int?    // 0 = Domingo, 1 = Lunes, etc.
+  dayOfWeek   Int? // 0 = Domingo, 1 = Lunes, etc.
   startTime   DateTime?
   endTime     DateTime?
   maxStudents Int? // Límite de cupos dinámico por clase
-  active      Boolean @default(true)
+  active      Boolean   @default(true)
 
   school School @relation(fields: [schoolId], references: [id])
   sport  Sport  @relation(fields: [sportId], references: [id])
-  coach  User?  @relation("CoachClass", fields: [coachId], references: [id])
-  
+  coach  User?  @relation("CoachLesson", fields: [coachId], references: [id])
+
   facilityId String?
   facility   Facility? @relation(fields: [facilityId], references: [id])
 
-  enrollments ClassEnrollment[]
+  enrollments LessonEnrollment[]
   sessions    AttendanceSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model ClassEnrollment {
+model LessonEnrollment {
   id        String @id @default(uuid())
-  classId   String
+  lessonId  String
   studentId String
 
   enrolledAt DateTime @default(now())
 
-  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  @@unique([classId, studentId]) // Un alumno no puede inscribirse dos veces en la misma clase
+  @@unique([lessonId, studentId]) // Un alumno no puede inscribirse dos veces en la misma clase
 }
 
 model AttendanceSession {
-  id      String   @id @default(uuid())
-  classId String
-  coachId String // Quién tomó la lista
-  date    DateTime @default(now()) // La fecha de la clase dictada
+  id       String   @id @default(uuid())
+  lessonId String
+  coachId  String // Quién tomó la lista
+  date     DateTime @default(now()) // La fecha de la clase dictada
 
-  class   Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
+  lesson  Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   coach   User               @relation("SessionCoach", fields: [coachId], references: [id])
   records AttendanceRecord[]
 
@@ -309,12 +309,12 @@ enum AttendanceStatus {
 }
 
 model Facility {
-  id        String   @id @default(uuid())
-  name      String   // Ej: "Cancha de Pasto 1", "Gimnasio Techado"
-  schoolId  String
-  school    School   @relation(fields: [schoolId], references: [id])
-  classes   Class[]
-  
+  id       String   @id @default(uuid())
+  name     String // Ej: "Cancha de Pasto 1", "Gimnasio Techado"
+  schoolId String
+  school   School   @relation(fields: [schoolId], references: [id])
+  lessons  Lesson[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

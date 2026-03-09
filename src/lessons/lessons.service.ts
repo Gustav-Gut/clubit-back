@@ -1,25 +1,25 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
-import { CreateClassDto } from './dto/create-class.dto';
+import { CreateLessonDto } from './dto/create-lesson.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EnrollStudentDto } from './dto/enroll-student.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { Role } from '@prisma/client';
 
 @Injectable()
-export class ClassesService {
+export class LessonsService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createClassDto: CreateClassDto, schoolId: string) {
-    const { facilityId, dayOfWeek, startTime, endTime } = createClassDto;
+  async create(createLessonDto: CreateLessonDto, schoolId: string) {
+    const { facilityId, dayOfWeek, startTime, endTime } = createLessonDto;
 
     // 1. Validar conflicto si hay cancha y horario definido
     if (facilityId && dayOfWeek !== undefined && startTime && endTime) {
       await this.checkScheduleConflict(facilityId, dayOfWeek, startTime, endTime);
     }
 
-    return this.prisma['class'].create({
+    return this.prisma.lesson.create({
       data: {
-        ...createClassDto,
+        ...createLessonDto,
         schoolId,
       },
     });
@@ -29,7 +29,7 @@ export class ClassesService {
     const { page = 1, limit = 10 } = pagination || {};
     const skip = (page - 1) * limit;
 
-    // Filtro de seguridad: Si es Coach, solo ve sus clases
+    // Filtro de seguridad: Si es Coach, solo ve sus lecciones
     const whereClause: any = {
       schoolId,
       active: true,
@@ -45,7 +45,7 @@ export class ClassesService {
     }
 
     const [data, total] = await Promise.all([
-      this.prisma.class.findMany({
+      this.prisma.lesson.findMany({
         where: whereClause,
         include: {
           sport: true,
@@ -55,7 +55,7 @@ export class ClassesService {
         skip,
         take: limit,
       }),
-      this.prisma['class'].count({
+      this.prisma.lesson.count({
         where: whereClause,
       }),
     ]);
@@ -72,7 +72,7 @@ export class ClassesService {
   }
 
   async findOne(id: string, schoolId: string) {
-    const classEntity = await this.prisma.class.findFirst({
+    const lessonEntity = await this.prisma.lesson.findFirst({
       where: { id, schoolId },
       include: {
         sport: true,
@@ -85,12 +85,12 @@ export class ClassesService {
       }
     });
 
-    if (!classEntity) throw new NotFoundException('Class not found');
-    return classEntity;
+    if (!lessonEntity) throw new NotFoundException('Lesson not found');
+    return lessonEntity;
   }
 
-  async update(id: string, updateClassDto: any, schoolId: string) {
-    const { facilityId, dayOfWeek, startTime, endTime } = updateClassDto;
+  async update(id: string, updateLessonDto: any, schoolId: string) {
+    const { facilityId, dayOfWeek, startTime, endTime } = updateLessonDto;
 
     if (facilityId || dayOfWeek !== undefined || startTime || endTime) {
       // Obtener datos actuales para completar los campos que falten en el update parcial
@@ -105,9 +105,9 @@ export class ClassesService {
       }
     }
 
-    return this.prisma.class.update({
+    return this.prisma.lesson.update({
       where: { id, schoolId },
-      data: updateClassDto,
+      data: updateLessonDto,
     });
   }
 
@@ -116,7 +116,7 @@ export class ClassesService {
     dayOfWeek: number,
     startTime: string,
     endTime: string,
-    excludeClassId?: string
+    excludelessonId?: string
   ) {
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -125,12 +125,12 @@ export class ClassesService {
     const startHour = start.getUTCHours() * 60 + start.getUTCMinutes();
     const endHour = end.getUTCHours() * 60 + end.getUTCMinutes();
 
-    const conflicts = await this.prisma['class'].findMany({
+    const conflicts = await this.prisma.lesson.findMany({
       where: {
         facilityId,
         dayOfWeek,
         active: true,
-        id: excludeClassId ? { not: excludeClassId } : undefined
+        id: excludelessonId ? { not: excludelessonId } : undefined
       }
     });
 
@@ -140,63 +140,63 @@ export class ClassesService {
       const cStart = new Date(c.startTime).getUTCHours() * 60 + new Date(c.startTime).getUTCMinutes();
       const cEnd = new Date(c.endTime).getUTCHours() * 60 + new Date(c.endTime).getUTCMinutes();
 
-      // Lógica de traslape: (Start1 < End2) AND (End1 > Start2)
+      // Lógica de traslape: (StartHour1 < EndHour2) AND (EndHour1 > StartHour2)
       if (startHour < cEnd && endHour > cStart) {
-        throw new ConflictException(`La cancha ya está ocupada por la clase "${c.name}" en ese horario.`);
+        throw new ConflictException(`La cancha ya está ocupada por la lección "${c.name}" en ese horario.`);
       }
     }
   }
 
   async remove(id: string, schoolId: string) {
-    return this.prisma['class'].update({
+    return this.prisma.lesson.update({
       where: { id, schoolId },
       data: { active: false },
     });
   }
 
-  async enrollStudent(classId: string, enrollDto: EnrollStudentDto, schoolId: string) {
+  async enrollStudent(lessonId: string, enrollDto: EnrollStudentDto, schoolId: string) {
     // 1. Verificar que la clase existe y pertenece al colegio
-    const classEntity = await this.prisma.class.findFirst({
-      where: { id: classId, schoolId },
+    const lessonEntity = await this.prisma.lesson.findFirst({
+      where: { id: lessonId, schoolId },
       include: { _count: { select: { enrollments: true } } }
     });
 
-    if (!classEntity) throw new NotFoundException('Class not found');
+    if (!lessonEntity) throw new NotFoundException('Class not found');
 
     // 2. Validar límite de alumnos si existe
-    if (classEntity.maxStudents && classEntity._count.enrollments >= classEntity.maxStudents) {
-      throw new BadRequestException(`Class has reached its maximum capacity of ${classEntity.maxStudents} students`);
+    if (lessonEntity.maxStudents && lessonEntity._count.enrollments >= lessonEntity.maxStudents) {
+      throw new BadRequestException(`Lesson has reached its maximum capacity of ${lessonEntity.maxStudents} students`);
     }
 
     // 3. Inscribir alumno (Prisma lanzará error si ya está inscrito por el @@unique)
     try {
-      return await this.prisma.classEnrollment.create({
+      return await this.prisma.lessonEnrollment.create({
         data: {
-          classId,
+          lessonId,
           studentId: enrollDto.studentId
         }
       });
     } catch (error) {
-      // P2002 es el código de Prisma para violación de variable única (@@unique[classId, studentId])
+      // P2002 es el código de Prisma para violación de variable única (@@unique[lessonId, studentId])
       if (error.code === 'P2002') {
-        throw new ConflictException('Student is already enrolled in this class');
+        throw new ConflictException('Student is already enrolled in this lesson');
       }
       throw error;
     }
   }
 
-  async unenrollStudent(classId: string, studentId: string, schoolId: string) {
-    const enrollment = await this.prisma.classEnrollment.findFirst({
+  async unenrollStudent(lessonId: string, studentId: string, schoolId: string) {
+    const enrollment = await this.prisma.lessonEnrollment.findFirst({
       where: {
-        classId,
+        lessonId,
         studentId,
-        class: { schoolId } // Asegurar que el colegio de la clase es correcto
+        lesson: { schoolId } // Asegurar que el colegio de la lección es correcto
       }
     });
 
     if (!enrollment) throw new NotFoundException('Enrollment not found');
 
-    return this.prisma.classEnrollment.delete({
+    return this.prisma.lessonEnrollment.delete({
       where: { id: enrollment.id }
     });
   }
