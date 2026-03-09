@@ -6,11 +6,14 @@ import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule);
     const configService = app.get(ConfigService);
+
+    app.use(cookieParser());
 
     app.useGlobalPipes(new ValidationPipe({
       whitelist: true,
@@ -46,7 +49,9 @@ async function bootstrap() {
 
     const port = configService.get<number>('PORT') || 3000;
 
-    console.log(`Application is running on port: ${port}`); ``
+    await app.listen(port, '0.0.0.0');
+
+    console.log(`Application is running on port: ${port}`);
     console.log(`Swagger documentation available at: http://localhost:${port}/api/docs`);
   } catch (error) {
     console.error('Error starting the application:', error);
