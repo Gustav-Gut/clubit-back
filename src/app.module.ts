@@ -14,6 +14,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { LessonsModule } from './lessons/lessons.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { FacilitiesModule } from './facilities/facilities.module';
+import { SportsModule } from './sports/sports.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { FacilitiesModule } from './facilities/facilities.module';
     LessonsModule,
     AttendanceModule,
     FacilitiesModule,
+    SportsModule,
   ],
   controllers: [AppController],
   providers: [

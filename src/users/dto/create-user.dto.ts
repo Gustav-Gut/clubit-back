@@ -25,6 +25,9 @@ export class CreateCoachProfileDto {
     @IsOptional() @IsString() specialty?: string;
     @IsOptional() @IsNumber() yearsExperience?: number;
     @IsOptional() @IsString() certifications?: string;
+
+    @IsOptional()
+    sportData?: any;
 }
 
 export class CreateUserTutorDto {
