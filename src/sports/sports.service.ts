@@ -37,4 +37,45 @@ export class SportsService {
       }
     });
   }
+
+  async getAllSports() {
+    return this.prisma.sport.findMany({
+      select: {
+        id: true,
+        name: true,
+        defaultFields: true
+      }
+    });
+  }
+
+  async associateSport(schoolId: string, sportId: string) {
+    // Upsert to handle if it was previously deactivated
+    return this.prisma.schoolSport.upsert({
+      where: {
+        schoolId_sportId: {
+          schoolId,
+          sportId
+        }
+      },
+      update: {
+        active: true
+      },
+      create: {
+        schoolId,
+        sportId
+      }
+    });
+  }
+
+  async dissociateSport(schoolSportId: string) {
+    // Soft delete to keep history of past configurations
+    return this.prisma.schoolSport.update({
+      where: {
+        id: schoolSportId
+      },
+      data: {
+        active: false
+      }
+    });
+  }
 }
