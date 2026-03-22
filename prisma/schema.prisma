@@ -17,6 +17,11 @@ model School {
   name          String
   slug          String         @unique
   address       String?
+  email         String?
+  phone         String?
+  website       String?
+  logoUrl       String?
+  description   String?
   active        Boolean        @default(true)
   users         User[]
   plans         Plan[]
