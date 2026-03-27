@@ -13,4 +13,8 @@ export class CreatePaymentDto {
     @IsString()
     @IsNotEmpty()
     description: string;
+
+    @IsString()
+    @IsNotEmpty()
+    subscriptionId: string;
 }

@@ -53,6 +53,12 @@ export interface PaymentGateway {
      */
     getSubscriptionStatus(id: string): Promise<PaymentDetails>;
 
+    /**
+     * Cancela una suscripción
+     * @param id ID de la suscripción del proveedor
+     */
+    cancelSubscription(id: string): Promise<void>;
+
     // Identificador del proveedor (MERCADOPAGO, STRIPE, etc.)
     provider: PaymentProvider;
 }

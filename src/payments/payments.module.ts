@@ -6,6 +6,7 @@ import { MercadoPagoService } from './mercadopago.service';
 @Module({
   providers: [
     PaymentsService,
+    MercadoPagoService,
     {
       provide: 'PAYMENT_GATEWAY',
       useClass: MercadoPagoService,

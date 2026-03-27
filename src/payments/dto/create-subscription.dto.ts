@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSubscriptionDto {
     @ApiProperty({ example: 'uuid-plan-123', description: 'ID del plan a suscribir' })
-    @IsUUID()
+    @IsString()
     @IsNotEmpty()
     planId: string;
 

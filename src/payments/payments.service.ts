@@ -27,7 +27,7 @@ export class PaymentsService {
     /**
      * Genera un pago puntual (no suscripción) con su link de pago.
      */
-    async createPayment(amount: number, email: string, description: string, schoolId: string, subscriptionId?: string, dueDate?: Date) {
+    async createPayment(amount: number, email: string, description: string, schoolId: string, subscriptionId: string, dueDate?: Date) {
         const user = await this.validateUser(email, schoolId);
 
         const newPayment = await this.prismaService.payment.create({
@@ -38,7 +38,7 @@ export class PaymentsService {
                 dueDate: dueDate || null,
                 payer: { connect: { id: user.id } },
                 school: { connect: { id: schoolId } },
-                ...(subscriptionId && { subscription: { connect: { id: subscriptionId } } })
+                subscription: { connect: { id: subscriptionId } }
             } as any,
         });
 
@@ -131,7 +131,36 @@ export class PaymentsService {
     }
 
     async getSubscriptions(email: string, schoolId: string) {
-        return this.paymentGateway.searchSubscriptions(email, schoolId);
+        return this.prismaService.subscription.findMany({
+            where: {
+                schoolId,
+                payer: { email }
+            },
+            include: {
+                plan: true
+            }
+        });
+    }
+
+    async cancelSubscription(subscriptionId: string, schoolId: string) {
+        const subscription = await this.prismaService.subscription.findUnique({
+            where: { id: subscriptionId, schoolId }
+        });
+
+        if (!subscription) {
+            throw new NotFoundException('Subscription not found');
+        }
+
+        // Si la suscripción tiene un externalId de MercadoPago, la cancelamos allá
+        if (subscription.externalId) {
+            await this.paymentGateway.cancelSubscription(subscription.externalId);
+        }
+
+        // Actualizamos el estado local (CANCELLED)
+        return await this.prismaService.subscription.update({
+            where: { id: subscriptionId },
+            data: { status: 'CANCELLED' }
+        });
     }
 
     /**
@@ -167,74 +196,167 @@ export class PaymentsService {
         const dataId = body.data?.id || body.data?.ID;
         if (!dataId) return;
         console.log(`Webhook received: Type=${type}, ID=${dataId}`);
+
         try {
             if (type === 'payment') {
                 const paymentInfo = await this.paymentGateway.getPaymentStatus(dataId);
-
                 if (paymentInfo.externalId) {
-                    const now = new Date();
-                    const isApproved = paymentInfo.status === 'approved';
-
-                    // Caso 1: pago puntual — el externalId ES el id de nuestro Payment
-                    const existingPayment = await this.prismaService.payment.findUnique({
-                        where: { id: paymentInfo.externalId }
-                    });
-
-                    if (existingPayment) {
-                        await this.prismaService.payment.update({
-                            where: { id: existingPayment.id },
-                            data: {
-                                status: isApproved ? 'COMPLETED' : 'FAILED',
-                                externalId: dataId.toString(),
-                                paidAt: isApproved ? now : null,
-                            },
-                        });
-                    } else {
-                        // Caso 2: cobro recurrente — el externalId ES el subscriptionId
-                        // Buscamos el payment PENDING más antiguo de esa suscripción (el próximo a vencer)
-                        const pendingPayment = await this.prismaService.payment.findFirst({
-                            where: {
-                                subscriptionId: paymentInfo.externalId,
-                                status: 'PENDING',
-                            },
-                            orderBy: { dueDate: 'asc' },
-                        });
-
-                        if (pendingPayment) {
-                            await this.prismaService.payment.update({
-                                where: { id: pendingPayment.id },
-                                data: {
-                                    status: isApproved ? 'COMPLETED' : 'FAILED',
-                                    externalId: dataId.toString(),
-                                    paidAt: isApproved ? now : null,
-                                },
-                            });
-
-                            // Si el cobro falló, la suscripción queda en mora
-                            if (!isApproved) {
-                                await this.prismaService.subscription.update({
-                                    where: { id: pendingPayment.subscriptionId },
-                                    data: { status: 'PAST_DUE' }
-                                });
-                            }
-                        }
-                    }
+                    await this.processPaymentStatusUpdate(
+                        paymentInfo.externalId,
+                        paymentInfo.status,
+                        dataId.toString()
+                    );
                 }
             }
             else if (type === 'subscription_preapproval') {
                 const subscriptionInfo = await this.paymentGateway.getSubscriptionStatus(dataId);
                 if (subscriptionInfo.externalId) {
-                    await this.prismaService.subscription.update({
-                        where: { id: subscriptionInfo.externalId },
-                        data: {
-                            status: subscriptionInfo.status === 'authorized' ? 'ACTIVE' : 'CANCELLED',
-                            externalId: dataId.toString(),
-                        },
-                    });
+                    await this.processSubscriptionStatusUpdate(
+                        subscriptionInfo.externalId,
+                        subscriptionInfo.status,
+                        dataId.toString()
+                    );
                 }
             }
         } catch (error) {
             console.error('Error processing webhook:', error);
+        }
+    }
+
+    /**
+     * Procesa la actualización de un pago puntual o recurrente.
+     * @param externalId ID interno del pago (pago puntual) o de la suscripción (pago recurrente)
+     * @param rawStatus Estado crudo proveniente de MercadoPago (ej: 'approved', 'rejected')
+     * @param mpPaymentId ID de la transacción en MercadoPago
+     */
+    async processPaymentStatusUpdate(externalId: string, rawStatus: string, mpPaymentId: string) {
+        const now = new Date();
+        const mappedStatus = this.mapMercadoPagoStatus(rawStatus);
+
+        console.log(
+            'Processing Payment Update:',
+            rawStatus,
+            '→',
+            mappedStatus,
+            'externalRef:',
+            externalId,
+            'mpId:',
+            mpPaymentId
+        );
+
+        const isApproved = mappedStatus === 'COMPLETED';
+
+        // Caso 1: pago puntual — el externalId ES el id de nuestro Payment
+        const existingPayment = await this.prismaService.payment.findUnique({
+            where: { id: externalId }
+        });
+
+        if (existingPayment) {
+            const updatedPayment = await this.prismaService.payment.update({
+                where: { id: existingPayment.id },
+                data: {
+                    status: mappedStatus,
+                    externalId: mpPaymentId,
+                    paidAt: isApproved ? now : null,
+                },
+            });
+
+            // Si el pago se aprueba y tiene suscripción, la activamos
+            if (isApproved && existingPayment.subscriptionId) {
+                await this.prismaService.subscription.update({
+                    where: { id: existingPayment.subscriptionId },
+                    data: { status: 'ACTIVE' }
+                });
+            }
+            return updatedPayment;
+        } else {
+            // Caso 2: cobro recurrente — el externalId ES el subscriptionId
+            // Buscamos el payment PENDING más antiguo de esa suscripción (el próximo a vencer)
+            const pendingPayment = await this.prismaService.payment.findFirst({
+                where: {
+                    subscriptionId: externalId,
+                    status: 'PENDING',
+                },
+                orderBy: { dueDate: 'asc' },
+            });
+
+            if (pendingPayment) {
+                await this.prismaService.payment.update({
+                    where: { id: pendingPayment.id },
+                    data: {
+                        status: mappedStatus,
+                        externalId: mpPaymentId,
+                        paidAt: isApproved ? now : null,
+                    },
+                });
+
+                // Si el pago se aprueba, activamos la suscripción
+                if (isApproved && pendingPayment.subscriptionId) {
+                    await this.prismaService.subscription.update({
+                        where: { id: pendingPayment.subscriptionId },
+                        data: { status: 'ACTIVE' }
+                    });
+                }
+
+                // Si el cobro falló, la suscripción queda en mora
+                if (mappedStatus === 'FAILED' && pendingPayment.subscriptionId) {
+                    await this.prismaService.subscription.update({
+                        where: { id: pendingPayment.subscriptionId },
+                        data: { status: 'PAST_DUE' }
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * Procesa la actualización de estado de una suscripción (alta/baja).
+     */
+    async processSubscriptionStatusUpdate(externalId: string, mpStatus: string, mpSubscriptionId: string) {
+        console.log('Processing Subscription Update:', mpStatus, 'externalRef:', externalId);
+
+        return await this.prismaService.subscription.update({
+            where: { id: externalId },
+            data: {
+                status: mpStatus === 'authorized' ? 'ACTIVE' : 'CANCELLED',
+                externalId: mpSubscriptionId,
+            },
+        });
+    }
+
+    /**
+     * Helper para obtener IDs válidos para pruebas manuales.
+     */
+    async getDebugIds() {
+        const plan = await this.prismaService.plan.findFirst();
+        const school = await this.prismaService.school.findFirst();
+        const user = await this.prismaService.user.findFirst({
+            where: { email: 'test@mercadopago.com' }
+        });
+        
+        return {
+            planId: plan?.id,
+            schoolId: school?.id,
+            userId: user?.id,
+            schoolSlug: school?.slug?.trim()
+        };
+    }
+
+    private mapMercadoPagoStatus(status: string): 'COMPLETED' | 'PENDING' | 'FAILED' {
+        switch (status) {
+            case 'approved':
+                return 'COMPLETED';
+
+            case 'pending':
+            case 'in_process':
+                return 'PENDING';
+
+            case 'rejected':
+            case 'cancelled':
+                return 'FAILED';
+
+            default:
+                return 'PENDING'; // fallback seguro
         }
     }
 }
