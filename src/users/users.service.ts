@@ -76,7 +76,7 @@ export class UsersService {
     });
   }
 
-  async findAll(schoolId: string, pagination?: PaginationDto, search?: string) {
+  async findAll(schoolId: string, pagination?: PaginationDto, search?: string, rolesQuery?: string) {
     const { page = 1, limit = 10 } = pagination || {};
     const skip = (page - 1) * limit;
 
@@ -91,6 +91,11 @@ export class UsersService {
           { rut: { contains: search, mode: 'insensitive' } },
         ],
       }),
+      ...(rolesQuery && {
+        roles: {
+          hasSome: rolesQuery.split(',').map(r => r.toUpperCase())
+        }
+      })
     };
 
     const [data, total] = await Promise.all([

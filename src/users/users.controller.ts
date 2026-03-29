@@ -28,9 +28,10 @@ export class UsersController {
   @Get()
   async findAll(
     @CurrentSchoolId() schoolId: string,
-    @Query() paginationDto: PaginationDto
+    @Query() paginationDto: PaginationDto,
+    @Query('roles') roles?: string
   ) {
-    const result = await this.usersService.findAll(schoolId, paginationDto, paginationDto.search);
+    const result = await this.usersService.findAll(schoolId, paginationDto, paginationDto.search, roles);
     return {
       ...result,
       data: result.data.map((user: any) => new User(user))
