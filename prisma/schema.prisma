@@ -146,7 +146,6 @@ model Sport {
   name          String        @unique
   defaultFields Json
   schools       SchoolSport[]
-  lessons       Lesson[]
 }
 
 model SchoolSport {
@@ -157,6 +156,7 @@ model SchoolSport {
   active       Boolean @default(true)
   school       School  @relation(fields: [schoolId], references: [id])
   sport        Sport   @relation(fields: [sportId], references: [id])
+  lessons      Lesson[]
 
   @@unique([schoolId, sportId])
 }
@@ -186,25 +186,25 @@ model CoachProfile {
 }
 
 model Lesson {
-  id          String              @id @default(uuid())
-  name        String
-  schoolId    String
-  sportId     String
-  coachId     String
-  dayOfWeek   DayOfWeek
-  startTime   String
-  endTime     String
-  maxStudents Int
-  active      Boolean             @default(true)
-  facilityId  String
-  enrollments LessonEnrollment[]
-  sessions    AttendanceSession[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  school      School              @relation(fields: [schoolId], references: [id])
-  sport       Sport               @relation(fields: [sportId], references: [id])
-  coach       User                @relation("CoachLesson", fields: [coachId], references: [id])
-  facility    Facility            @relation(fields: [facilityId], references: [id])
+  id            String              @id @default(uuid())
+  name          String
+  schoolId      String
+  schoolSportId String
+  coachId       String
+  dayOfWeek     DayOfWeek
+  startTime     String
+  endTime       String
+  maxStudents   Int
+  active        Boolean             @default(true)
+  facilityId    String
+  enrollments   LessonEnrollment[]
+  sessions      AttendanceSession[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  school        School              @relation(fields: [schoolId], references: [id])
+  schoolSport   SchoolSport         @relation(fields: [schoolSportId], references: [id])
+  coach         User                @relation("CoachLesson", fields: [coachId], references: [id])
+  facility      Facility            @relation(fields: [facilityId], references: [id])
 }
 
 model Facility {

@@ -36,7 +36,7 @@ export class LessonsService {
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
-          { sport: { name: { contains: search, mode: 'insensitive' } } },
+          { schoolSport: { sport: { name: { contains: search, mode: 'insensitive' } } } },
         ]
       })
     };
@@ -48,7 +48,9 @@ export class LessonsService {
       this.prisma.lesson.findMany({
         where: whereClause,
         include: {
-          sport: true,
+          schoolSport: {
+             include: { sport: true }
+          },
           coach: { select: { id: true, firstName: true, lastName: true } },
           _count: { select: { enrollments: true } }
         },
@@ -75,7 +77,9 @@ export class LessonsService {
     const lessonEntity = await this.prisma.lesson.findFirst({
       where: { id, schoolId },
       include: {
-        sport: true,
+        schoolSport: {
+           include: { sport: true }
+        },
         coach: { select: { id: true, firstName: true, lastName: true } },
         enrollments: {
           include: {

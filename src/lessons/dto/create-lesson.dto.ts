@@ -8,10 +8,10 @@ export class CreateLessonDto {
     @IsNotEmpty()
     name: string;
 
-    @ApiProperty({ example: 'uuid-deporte-123', description: 'ID del deporte asociado' })
+    @ApiProperty({ example: 'uuid-school-sport-123', description: 'ID del deporte asoaciado (SchoolSport)' })
     @IsString()
     @IsNotEmpty()
-    sportId: string;
+    schoolSportId: string;
 
     @ApiProperty({ example: 'uuid-coach-123', description: 'ID del profesor' })
     @IsString()

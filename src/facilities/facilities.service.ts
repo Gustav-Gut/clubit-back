@@ -30,7 +30,7 @@ export class FacilitiesService {
             include: {
                 lessons: {
                     include: {
-                        sport: true,
+                        schoolSport: { include: { sport: true } },
                         coach: { select: { firstName: true, lastName: true } },
                     },
                 },
@@ -61,14 +61,14 @@ export class FacilitiesService {
             where: { schoolId, active: true },
             include: {
                 facility: true,
-                sport: true,
+                schoolSport: { include: { sport: true } },
                 coach: { select: { firstName: true, lastName: true } },
             },
         });
 
         return lessons.map((c) => ({
             id: c.id,
-            title: `${c.name} (${c.sport.name})`,
+            title: `${c.name} (${c.schoolSport?.sport?.name || 'Unknown'})`,
             coach: c.coach ? `${c.coach.firstName} ${c.coach.lastName}` : 'Sin profesor',
             facility: c.facility?.name || 'Sin cancha asignada',
             dayOfWeek: c.dayOfWeek,
