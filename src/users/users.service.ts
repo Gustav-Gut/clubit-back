@@ -132,21 +132,63 @@ export class UsersService {
 
   async findOne(id: string, schoolId: string) {
     return this.prisma.userWithoutPassword.user.findFirst({
-      where: {
-        id,
-        schoolId,
-        active: true,
-      },
+      where: { id, schoolId, active: true },
+      include: {
+        studentProfile: true,
+        tutorProfile: true,
+        coachProfile: true,
+      }
     });
   }
 
   async update(id: string, dto: UpdateUserDto, schoolId: string) {
-    return this.prisma.userWithoutPassword.user.update({
-      where: {
-        id,
-        schoolId,
+    const { studentProfile, tutorProfile, coachProfile, password, ...userData } = dto as any;
+
+    // Hash password only if provided
+    let hashedPassword: string | undefined;
+    if (password && password.trim() !== '') {
+      const rounds = Number(this.configService.get<number>('SALT_ROUNDS', 12));
+      hashedPassword = await hashPassword(password, rounds);
+    }
+
+    return this.prisma.user.update({
+      where: { id, schoolId },
+      data: {
+        ...userData,
+        ...(hashedPassword && { password: hashedPassword }),
+
+        ...(studentProfile && {
+          studentProfile: {
+            upsert: {
+              create: studentProfile,
+              update: studentProfile,
+            }
+          }
+        }),
+
+        ...(tutorProfile && {
+          tutorProfile: {
+            upsert: {
+              create: tutorProfile,
+              update: tutorProfile,
+            }
+          }
+        }),
+
+        ...(coachProfile && {
+          coachProfile: {
+            upsert: {
+              create: coachProfile,
+              update: coachProfile,
+            }
+          }
+        }),
       },
-      data: dto,
+      include: {
+        studentProfile: true,
+        tutorProfile: true,
+        coachProfile: true,
+      }
     });
   }
 
