@@ -1,22 +1,22 @@
 services:
-  sportivo_postgres:
-    container_name: sportivo_postgres
+  clubit_postgres:
+    container_name: clubit_postgres
     image: postgres:16
     environment:
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: devpass
-      POSTGRES_DB: sportivo_db
+      POSTGRES_DB: clubit_db
     ports:
       - '5432:5432'
     volumes:
-      - sportivo_postgres_data:/var/lib/postgresql/data
+      - clubit_postgres_data:/var/lib/postgresql/data
     networks:
-      - sportivo_network
-  sportivo-back:
+      - clubit_network
+  clubit-back:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: sportivo_back
+    container_name: clubit_back
     ports:
       - '3000:3000'
     volumes:
@@ -24,14 +24,14 @@ services:
       - /app/node_modules
     environment:
       # OJO: Aquí 'host' debe ser el nombre del servicio de la BD docker
-      DATABASE_URL: "postgresql://dev:devpass@sportivo_postgres:5432/sportivo_db?schema=public"
+      DATABASE_URL: "postgresql://dev:devpass@clubit_postgres:5432/clubit_db?schema=public"
     depends_on:
-      - sportivo_postgres
+      - clubit_postgres
     networks:
-      - sportivo_network
+      - clubit_network
 volumes:
-  sportivo_postgres_data:
+  clubit_postgres_data:
 networks:
-  sportivo_network:
-    name: sportivo_network
+  clubit_network:
+    name: clubit_network
     driver: bridge

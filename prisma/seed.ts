@@ -12,26 +12,26 @@ async function main() {
 
     // 1. Crear Escuela
     const school = await prisma.school.upsert({
-        where: { slug: 'sportivo-hq' },
+        where: { slug: 'clubit-hq' },
         update: {},
         create: {
-            name: 'Sportivo HQ',
-            slug: 'sportivo-hq',
+            name: 'Clubit HQ',
+            slug: 'clubit-hq',
             address: 'Vicuña Mackenna 123',
         },
     });
 
     // 2. Crear Superadmin
-    const hashedPassword = await bcrypt.hash('2768696Sportivo!', 12);
+    const hashedPassword = await bcrypt.hash('2768696Clubit!', 12);
 
     const superadmin = await prisma.user.upsert({
-        where: { email_schoolId: { email: 'gustav@sportivo.com', schoolId: school.id } },
+        where: { email_schoolId: { email: 'gustav@clubit.cl', schoolId: school.id } },
         update: {},
         create: {
             firstName: 'Gustav',
             lastName: 'Gutierrez',
             rut: '16615578-9',
-            email: 'gustav@sportivo.com',
+            email: 'gustav@clubit.cl',
             password: hashedPassword,
             roles: ['SUPERADMIN'],
             schoolId: school.id,
