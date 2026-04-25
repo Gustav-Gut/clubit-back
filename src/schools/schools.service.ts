@@ -45,6 +45,17 @@ export class SchoolsService {
     );
   }
 
+  findPublicInfoBySlug(slug: string) {
+    return this.prisma.school.findUnique({
+      where: { slug, active: true },
+      select: {
+        name: true,
+        logoUrl: true,
+        defaultLanguage: true,
+      }
+    });
+  }
+
   update(id: string, updateSchoolDto: UpdateSchoolDto) {
     return this.prisma.school.update({
       where: { id },

@@ -34,6 +34,12 @@ export class SchoolsController {
     return this.schoolsService.findAll();
   }
 
+  @Public()
+  @Get('public/:slug')
+  findPublicInfo(@Param('slug') slug: string) {
+    return this.schoolsService.findPublicInfoBySlug(slug);
+  }
+
   @Get()
   findOne(
     @CurrentSchoolId() schoolId: string) {
