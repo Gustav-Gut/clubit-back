@@ -32,6 +32,7 @@ model School {
   facilities      Facility[]
   moraAlertDays   Int            @default(5)
   preDueAlertDays Int            @default(3)
+  defaultLanguage String         @default("es-CL")
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
